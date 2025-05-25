@@ -20,13 +20,28 @@ class DashboardsView(TemplateView):
 
         return context
     
-def MultilineIncidentTop3Country(request):
+def DataByYear(request):
     query = '''
+    SELECT DISTINCT strftime('%Y', date_time) AS year
+    FROM fire_incident
+    ORDER BY year DESC;
+    '''
+    with connection.cursor() as cursor:
+        cursor.execute(query)
+        years = [row[0] for row in cursor.fetchall()]
+    return JsonResponse(years, safe=False)
+
+def MultilineIncidentTop3Country(request):
+    selected_year = request.GET.get("year", "")
+    if not selected_year.isdigit():
+        return JsonResponse({}, status=400)
+    
+    query = f'''
     WITH top_countries AS (
         SELECT fl.country
         FROM fire_incident fi
         JOIN fire_locations fl ON fi.location_id = fl.id
-        WHERE strftime('%Y', fi.date_time) = strftime('%Y', 'now')
+        WHERE strftime('%Y', fi.date_time) = '{selected_year}'
         GROUP BY fl.country
         ORDER BY COUNT(fi.id) DESC
         LIMIT 3
@@ -41,7 +56,7 @@ def MultilineIncidentTop3Country(request):
         fire_locations fl ON fi.location_id = fl.id
     WHERE 
         fl.country IN (SELECT country FROM top_countries)
-        AND strftime('%Y', fi.date_time) = strftime('%Y', 'now')
+        AND strftime('%Y', fi.date_time) = '{selected_year}'
     GROUP BY 
         fl.country, month
     ORDER BY 
@@ -71,35 +86,36 @@ def MultilineIncidentTop3Country(request):
     return JsonResponse(result)
 
 def multipleBarbySeverity(request):
-    query = '''
+    selected_year = request.GET.get("year", "")
+    if not selected_year.isdigit():
+        return JsonResponse({}, status=400)
+        
+    query = f'''
         SELECT
+            strftime('%Y', fi.date_time) AS year,
             fi.severity_level,
             strftime('%m', fi.date_time) AS month,
             COUNT(fi.id) AS incident_count
         FROM
             fire_incident fi
-        GROUP BY fi.severity_level, month
-        '''
+        WHERE
+            strftime('%Y', fi.date_time) = '{selected_year}'
+        GROUP BY year, fi.severity_level, month
+        ORDER BY year, fi.severity_level, month
+    '''
 
     with connection.cursor() as cursor:
         cursor.execute(query)
         rows = cursor.fetchall()
 
+    months = [str(i).zfill(2) for i in range(1, 13)]
     result = {}
-    months = set(str(i).zfill(2) for i in range(1, 13))
 
-    for row in rows:
-        level = str(row[0])  # Ensure the severity level is a string
-        month = row[1]
-        total_incidents = row[2]
-
-        if level not in result:
-            result[level] = {month: 0 for month in months}
-
-        result[level][month] = total_incidents
-
-    # Sort months within each severity level
-    for level in result:
-        result[level] = dict(sorted(result[level].items()))
+    for year, severity, month, count in rows:
+        if year not in result:
+            result[year] = {}
+        if severity not in result[year]:
+            result[year][severity] = {m: 0 for m in months}
+        result[year][severity][month] = count
 
     return JsonResponse(result)
