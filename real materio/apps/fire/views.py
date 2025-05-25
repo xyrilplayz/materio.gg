@@ -1,6 +1,6 @@
 from django.views.generic import TemplateView
 from web_project import TemplateLayout
-from .models import FireStation
+from .models import Incident
 from django.views.generic.list import ListView
 from django.db import connection
 from django.http import JsonResponse
@@ -17,7 +17,7 @@ class DashboardsView(TemplateView):
     def get_context_data(self, **kwargs):
         # A function to init the global layout. It is defined in web_project/__init__.py file
         context = TemplateLayout.init(self, super().get_context_data(**kwargs))
-
+        context['recent_incidents'] = Incident.objects.select_related('location').order_by('-date_time')[:10]
         return context
     
 def DataByYear(request):
@@ -118,4 +118,97 @@ def multipleBarbySeverity(request):
             result[year][severity] = {m: 0 for m in months}
         result[year][severity][month] = count
 
+    return JsonResponse(result)
+
+def StationCount(request):
+    query = '''
+    SELECT
+        COUNT(*) AS count
+    FROM 
+        fire_firestation;
+    '''
+    with connection.cursor() as cursor:
+        cursor.execute(query)
+        row = cursor.fetchone()
+    result = {'count': row[0] if row else 0}
+    return JsonResponse(result)
+    
+def FireTruckCount(request):
+    query = '''
+    SELECT 
+        COUNT(*) AS count
+    FROM 
+        fire_firetruck;
+    '''
+    
+    with connection.cursor() as cursor:
+        cursor.execute(query)
+        row = cursor.fetchone()
+    
+    result = {'count': row[0] if row else 0}
+    
+    return JsonResponse(result)
+
+def FireFighterCount(request):
+    query = '''
+    SELECT 
+        COUNT(*) AS count
+    FROM 
+        fire_firefighters;
+    '''
+    
+    with connection.cursor() as cursor:
+        cursor.execute(query)
+        row = cursor.fetchone()
+    
+    result = {'count': row[0] if row else 0}
+    
+    return JsonResponse(result)
+
+def IncidentCount(request):
+    query = '''
+    SELECT 
+        COUNT(*) AS count
+    FROM 
+        fire_incident
+    '''
+    
+    with connection.cursor() as cursor:
+        cursor.execute(query)
+        row = cursor.fetchone()
+    
+    result = {'count': row[0] if row else 0}
+    
+    return JsonResponse(result)
+
+def LocationCount(request):
+    query = '''
+    SELECT 
+        COUNT(*) AS count
+    FROM 
+        fire_locations;
+    '''
+    
+    with connection.cursor() as cursor:
+        cursor.execute(query)
+        row = cursor.fetchone()
+    
+    result = {'count': row[0] if row else 0}
+    
+    return JsonResponse(result)
+
+def WeatherCount(request):
+    query = '''
+    SELECT 
+        COUNT(*) AS count
+    FROM 
+        fire_weatherconditions;
+    '''
+    
+    with connection.cursor() as cursor:
+        cursor.execute(query)
+        row = cursor.fetchone()
+    
+    result = {'count': row[0] if row else 0}
+    
     return JsonResponse(result)

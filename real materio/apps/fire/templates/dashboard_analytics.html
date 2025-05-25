@@ -7,11 +7,14 @@
 {% block vendor_css %}
   {{ block.super }}
   <link rel="stylesheet" href="{% static 'vendor/libs/apex-charts/apex-charts.css' %}" />
+  <link rel="stylesheet" href="{% static 'vendor/libs/perfect-scrollbar/perfect-scrollbar.css' %}" />
 {% endblock vendor_css %}
 
 {% block vendor_js %}
   {{ block.super }}
   <script src="{% static 'vendor/libs/apex-charts/apexcharts.js' %}"></script>
+  <script src="{% static 'vendor/libs/perfect-scrollbar/perfect-scrollbar.js' %}"></script>
+
   <!-- Include Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script>
@@ -212,123 +215,230 @@
         })
         .catch((error) => console.error("Error:", error));
     }
-
-    selectYear.addEventListener("change", () => {
-      const selectedYear = selectYear.value;
-      updateCharts(selectedYear);
-    });
+    fetch(`/stationCount/`)
+      .then(res => res.json())
+      .then(data => {
+        const count = data.count ?? 0;
+        document.getElementById("fireStationsCount").textContent = count;
+      })
+      .catch(() => {
+        document.getElementById("fireStationsCount").textContent = "Error";
+      });
+    fetch(`/fireTruckCount/`)
+      .then(res => res.json())
+      .then(data => {
+        const count = data.count ?? 0;
+        document.getElementById("fireTrucksCount").textContent = count;
+      })
+      .catch(() => {
+        document.getElementById("fireTrucksCount").textContent = "Error";
+      });
+    fetch(`/fireFighterCount/`)
+      .then(res => res.json())
+      .then(data => {
+        const count = data.count ?? 0;
+        document.getElementById("fireFightersCount").textContent = count;
+      })
+      .catch(() => {
+        document.getElementById("fireFightersCount").textContent = "Error";
+      });
+          fetch(`/incidentCount/`)
+      .then(res => res.json())
+      .then(data => {
+        const count = data.count ?? 0;
+        document.getElementById("fireIncidentsCount").textContent = count;
+      })
+      .catch(() => {
+        document.getElementById("fireIncidentsCount").textContent = "Error";
+      });
+    fetch(`/locationCount/`)
+      .then(res => res.json())
+      .then(data => {
+        const count = data.count ?? 0;
+        document.getElementById("fireLocationCount").textContent = count;
+      })
+      .catch(() => {
+        document.getElementById("fireLocationCount").textContent = "Error";
+      });
+    fetch(`/weatherCount/`)
+      .then(res => res.json())
+      .then(data => {
+        const count = data.count ?? 0;
+        document.getElementById("weatherCount").textContent = count;
+      })
+      .catch(() => {
+        document.getElementById("weatherCount").textContent = "Error";
+      });
 
     loadYears();
+    
   </script>
 {% endblock vendor_js %}
 
-{% block content %}
-<div class="container-fluid">
-  <!-- Sales? -->
-  <div class="row gy-4 mb-4">
-    <div class="col-md-12 col-lg-4">
-      <div class="card h-100">
-        <div class="card-body text-nowrap">
-          <h5 class="card-title mb-0 flex-wrap text-nowrap">Congratulations Norris! 🎉</h5>
-          <p class="mb-2">Best seller of the month</p>
-          <h4 class="text-primary mb-0">$42.8k</h4>
-          <p class="mb-2">78% of target 🚀</p>
-          <a href="javascript:;" class="btn btn-sm btn-primary">View Sales</a>
-        </div>
-        <img src="{% static 'img/illustrations/trophy.png' %}" class="position-absolute bottom-0 end-0 me-5 mb-5" width="83" alt="view sales">
-      </div>
-    </div>
-    <div class="col-md-12 col-lg-4">
-      <div class="card h-100">
-        <div class="card-body text-nowrap">
-          <h5 class="card-title mb-0 flex-wrap text-nowrap">New Customers</h5>
-          <p class="mb-2">Total: 1,234</p>
-          <h4 class="text-success mb-0">+15% from last month</h4>
-          <p class="mb-2">Keep up the good work! 💪</p>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-12 col-lg-4">
-      <div class="card h-100">
-        <div class="card-body text-nowrap">
-          <h5 class="card-title mb-0 flex-wrap text-nowrap">Monthly Revenue</h5>
-          <p class="mb-2">Total: $150,000</p>
-          <h4 class="text-warning mb-0">+20% from last month</h4>
-          <p class="mb-2">Great job team! 🎉</p>
-        </div>
-      </div>
-    </div>
-  </div>
+{% block page_js %}
+  {{ block.super }}
+  <script src="{% static 'js/extended-ui-perfect-scrollbar.js' %}"></script>
+{% endblock page_js %}
 
-  <div class="row gy-6">
-    <!-- Overview Chart -->
-    <div class="col-md-6">
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title">Fire Incidents Top 3 Countries</div>
+{% block content %}
+<div class="row">
+  <div class="col-md-9">
+  <!-- Sales? -->
+    <div class="row gy-2 mb-3">
+      <div class="col-md-12 col-lg-4">
+        <div class="card h-100">
+          <div class="card-body text-wrap">
+            <h5 class="card-title mb-0 flex-wrap text-wrap">Congratulations Norris! 🎉</h5>
+            <p class="mb-2">Best seller of the month</p>
+            <h4 class="text-primary mb-0">$42.8k</h4>
+            <p class="mb-2">78% of target 🚀</p>
+            <a href="javascript:;" class="btn btn-sm btn-primary">View Sales</a>
+          </div>
+          <img src="{% static 'img/illustrations/trophy.png' %}" class="position-absolute bottom-0 end-0 me-5 mb-5" width="83" alt="view sales">
         </div>
-        <div class="card-body">
-          <div class="chart-container">
-            <canvas id="multipleLineChart"></canvas>
+      </div>
+      <div class="col-md-12 col-lg-4">
+        <div class="card h-100">
+          <div class="card-body text-wrap">
+            <h5 class="card-title mb-0 flex-wrap text-wrap">New Customers</h5>
+            <p class="mb-2">Total: 1,234</p>
+            <h4 class="text-success mb-0">+15% from last month</h4>
+            <p class="mb-2">Keep up the good work! 💪</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-12 col-lg-4">
+        <div class="card h-100">
+          <div class="card-body text-wrap">
+            <h5 class="card-title mb-0 flex-wrap text-wrap">Monthly Revenue</h5>
+            <p class="mb-2">Total: $150,000</p>
+            <h4 class="text-warning mb-0">+20% from last month</h4>
+            <p class="mb-2">Great job team! 🎉</p>
           </div>
         </div>
       </div>
     </div>
-    <div class="col-md-6">
-      <div class="card">
+
+    <div class="row gy-3">
+      <!-- Overview Chart -->
+      <div class="col-md-6">
+        <div class="card">
           <div class="card-header">
-              <div class="card-title">Total Incidents for each Month</div>
+            <div class="card-title">Fire Incidents Top 3 Countries</div>
           </div>
           <div class="card-body">
             <div class="chart-container">
-                <canvas id="multipleBarChart"></canvas>
+              <canvas id="multipleLineChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">Total Incidents for each Month</div>
+            </div>
+            <div class="card-body">
+              <div class="chart-container">
+                  <canvas id="multipleBarChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    <div class="row gx-4 gy-2 d-flex justify-content mb-3">
+      <div class="col-lg-3 col-sm-6 col-12">
+        <div class="demo-inline-spacing">
+          <div class="btn-group" id="dropdown-icon-demo">
+            <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" id="dropdownYearBtn">
+              <i class="ri-menu-line me-1"></i> Select Year
+            </button>
+            <ul class="dropdown-menu" id="selectYearDropdown">
+              <!-- Year items will be inserted here -->
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title">Totals</h5>
+        </div>
+        <div class="row">
+          <div class="col-md-3 col-lg-4">
+            <div class="card-body">
+              <div class="chart-container">
+                <p class="card-text">Fire Stations: </p>
+                <span class="badge bg-label-primary ms-2" id="fireStationsCount">Loading...</span>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3 col-lg-4">
+            <div class="card-body">
+              <div class="chart-container">
+                <p class="card-text">Fire Trucks: </p>
+                <span class="badge bg-label-primary ms-2" id="fireTrucksCount">Loading...</span>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3 col-lg-4">
+            <div class="card-body">
+              <div class="chart-container">
+                <p class="card-text">Fire Fighters: </p>
+                <span class="badge bg-label-primary ms-2" id="fireFightersCount">Loading...</span>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3 col-lg-4">
+            <div class="card-body">
+              <div class="chart-container">
+                <p class="card-text">Fire Incidents: </p>
+                <span class="badge bg-label-primary ms-2" id="fireIncidentsCount">Loading...</span>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3 col-lg-4">
+            <div class="card-body">
+              <div class="chart-container">
+                <p class="card-text">Locations: </p>
+                <span class="badge bg-label-primary ms-2" id="fireLocationCount">Loading...</span>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3 col-lg-4">
+            <div class="card-body">
+              <div class="chart-container">
+                <p class="card-text">Weathers: </p>
+                <span class="badge bg-label-primary ms-2" id="weatherCount">Loading...</span>
+              </div>
             </div>
           </div>
         </div>
       </div>
     </div>
+  </div>
 
-  <div class="col-lg-3 col-sm-6 col-12">
-    <small class="text-light fw-medium">Year: </small>
-    <div class="demo-inline-spacing">
-      <div class="btn-group" id="dropdown-icon-demo">
-        <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" id="dropdownYearBtn">
-          <i class="ri-menu-line me-1"></i> Select Year
-        </button>
-        <ul class="dropdown-menu" id="selectYearDropdown">
-          <!-- Year items will be inserted here -->
-        </ul>
+  <div class="col-lg-3 gx-12">
+    <div class="card mb-6">
+      <div class="card-body">
+        <h5 class="card-title mb-0">Recent Incidents</h5>
+        <div class="overflow-hidden demo-inline-spacing mt-4" style="height: 700px;" id="vertical-example">
+          <div class="list-group">
+            {% for incident in recent_incidents %}
+            <a href="javascript:void(0);" class="list-group-item list-group-item-action flex-column align-items-start">
+              <div class="d-flex justify-content-between w-100">
+                <h4 class="mb-1">{{ incident.severity_level }}</h4>
+                <small class="{% if not forloop.first %}text-muted{% endif %}">{{ incident.date_time|timesince }} ago</small>
+              </div>
+              <p class="mb-1">{{ incident.description }}</p>
+              <small class="{% if not forloop.first %}text-muted{% endif %}">{{ incident.location.name }} - {{ incident.location.city }}</small>
+            </a>
+            {% endfor %}
+          </div>
+        </div>
       </div>
     </div>
   </div>
-
-  <div class="card">
-    <h5 class="card-header">Recent Fire Incidents</h5>
-    <div class="table-responsive text-nowrap">
-      <table class="table">
-        <thead class="table-dark">
-          <tr>
-            <th>Date</th>
-            <th>Location</th>
-            <th>Severity</th>
-            <th>Description</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody class="table-border-bottom-0" id="incidentTableBody"></tbody>
-      </table>
-    </div>
-    <div class="d-flex justify-content-end p-3">
-      <nav>
-        <ul class="pagination pagination-sm mb-0">
-          <li class="page-item" id="prevPage"><button type="button" class="btn btn-sm btn-secondary">Previous</button></li>
-          <li class="page-item disabled"><span class="page-link" id="currentPage">1</span></li>
-          <li class="page-item" id="nextPage"><button type="button" class="btn btn-sm btn-secondary">Next</button></li>
-        </ul>
-      </nav>
-    </div>
-  </div>
-
 </div>
-
 {% endblock content %}
