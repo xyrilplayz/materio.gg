@@ -15,203 +15,219 @@
   <!-- Include Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script>
-    const selectYear = document.getElementById("selectYear");
+    const selectYear = document.getElementById("selectYearDropdown");
     let multilineChartInstance = null;
     let multibarChartInstance = null;
 
-    function loadYears() {
-      fetch("/DataByYear/")
-        .then(response => response.json())
-        .then(data => {
-          data.forEach(year => {
-            const option = document.createElement("option");
-            option.value = year;
-            option.textContent = year;
-            selectYear.appendChild(option);
-          });
-
-          const selectedYear = new Date().getFullYear();
-          selectYear.value = selectedYear;
-          updateCharts(selectedYear);
-        });
-    }
-  function updateCharts(year) {
-    fetch(`/multilineChart/?year=${year}`)
+  function loadYears() {
+    fetch("/DataByYear/")
       .then(response => response.json())
       .then(data => {
-        const monthOrder = ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"];
-        const monthLabels = {
-          "01": "Jan", "02": "Feb", "03": "Mar", "04": "Apr", "05": "May", "06": "Jun",
-          "07": "Jul", "08": "Aug", "09": "Sep", "10": "Oct", "11": "Nov", "12": "Dec"
-        };
-
-        const labels = monthOrder.map(m => monthLabels[m]);
-
-        const colors = ["#1fd43f", "#59405d", "#e26a2c", "#007bff", "#ff00aa"];
-        const datasets = [];
-
-        Object.entries(data).forEach(([country, values], index) => {
-          const counts = monthOrder.map(month => values[month] || 0);
-
-          datasets.push({
-            label: country,
-            data: counts,
-            borderColor: colors[index % colors.length],
-            pointBorderColor: "#FFF",
-            pointBackgroundColor: colors[index % colors.length],
-            fill: true,
-            backgroundColor: "transparent",
-            borderWidth: 2
-          });
+        const dropdown = document.getElementById("selectYearDropdown");
+        dropdown.innerHTML = "";
+        data.forEach(year => {
+          const li = document.createElement("li");
+          const a = document.createElement("a");
+          a.href = "javascript:void(0);";
+          a.className = "dropdown-item d-flex align-items-center";
+          a.textContent = year;
+          a.onclick = () => {
+            document.getElementById("dropdownYearBtn").innerHTML = `<i class="ri-menu-line me-1"></i> ${year}`;
+            updateCharts(year);
+          };
+          li.appendChild(a);
+          dropdown.appendChild(li);
         });
 
-        if (multilineChartInstance) {
-            multilineChartInstance.destroy();
+        const currentYear = new Date().getFullYear();
+        if (data.includes(currentYear)) {
+          document.getElementById("dropdownYearBtn").innerHTML = `<i class="ri-menu-line me-1"></i> ${currentYear}`;
+          updateCharts(currentYear);
+        } else if (data.length) {
+          document.getElementById("dropdownYearBtn").innerHTML = `<i class="ri-menu-line me-1"></i> ${data[0]}`;
+          updateCharts(data[0]);
         }
-
-        const ctx = document.getElementById("multipleLineChart").getContext("2d");
-        multilineChartInstance = new Chart(ctx, {
-          type: "line",
-          data: {
-            labels,
-            datasets
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-              legend: { position: "bottom" },
-              title: {
-                display: true,
-                text: "Top 3 Countries with Fire Incidents this Year"
-              },
-              tooltip: {
-                mode: "index",
-                intersect: false
-              }
-            },
-            scales: {
-              x: {
-                stacked: false
-              },
-              y: {
-                stacked: false
-              }
-            }
-          }
-        });
-      })
-      .catch(error => console.error("Chart load error:", error));
-      
-    fetch(`/multiBarChart/?year=${year}`)
-      .then((response) => response.json())
-      .then((result) => {
-          var dataForYear = result[year] || {};
-          var severitylevel = Object.keys(dataForYear);
-          // Extract incident counts for each severity level
-          var incidentCount_major = [];
-          var incidentCount_minor = [];
-          var incidentCount_moderate = [];
-
-          var months = Object.keys(result);
-          var counts = Object.values(result);
-
-          // Sort function to sort object keys by month
-          function sortObjectKeys(obj) {
-          return Object.keys(obj).sort((a, b) => parseInt(a) - parseInt(b));
-          }
-
-          // Check if data for each severity level exists and extract incident counts
-          if (severitylevel.length >= 1) {
-            const sl1_data = dataForYear[severitylevel[0]];
-            const sortedKeys1 = sortObjectKeys(sl1_data);
-            incidentCount_major = sortedKeys1.map(key => sl1_data[key]);
-          }
-
-          if (severitylevel.length >= 2) {
-            const sl2_data = dataForYear[severitylevel[1]];
-            const sortedKeys2 = sortObjectKeys(sl2_data);
-            incidentCount_minor = sortedKeys2.map(key => sl2_data[key]);
-          }
-
-          if (severitylevel.length >= 3) {
-            const sl3_data = dataForYear[severitylevel[2]];
-            const sortedKeys3 = sortObjectKeys(sl3_data);
-            incidentCount_moderate = sortedKeys3.map(key => sl3_data[key]);
-          }
-
-          if (multibarChartInstance) {
-            multibarChartInstance.destroy();
-          }
-
-          const ctxBar = document.getElementById("multipleBarChart").getContext("2d");
-          multibarChartInstance = new Chart(ctxBar, {
-          type: "bar",
-          data: {
-              labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
-              datasets: [
-              {
-                  label: "Minor Fire",
-                  backgroundColor: "#595d5d",
-                  borderColor: "#595d5d",
-                  data: incidentCount_minor,
-              },
-              {
-                  label: "Moderate Fire",
-                  backgroundColor: "#f4a84b",
-                  borderColor: "#f4a84b",
-                  data: incidentCount_moderate,
-              },
-              {
-                  label: "Major Fire",
-                  backgroundColor: "#1174d7",
-                  borderColor: "#1174d7",
-                  data: incidentCount_major,
-              },
-              ],
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            legend: {
-              position: "bottom"
-            },
-            title: {
-              display: true,
-              text: "Fire Incidents by Severity Level"
-            },
-            tooltips: {
-              mode: "index",
-              intersect: false
-            },
-            scales: {
-              x: {
-                stacked: true,
-              },
-              y: {
-                stacked: true,
-              },
-            },
-          },
-          });
-      })
-      .catch((error) => console.error("Error:", error));
+      });
   }
 
-  selectYear.addEventListener("change", () => {
-    const selectedYear = selectYear.value;
-    updateCharts(selectedYear);
-  });
+    function updateCharts(year) {
+      fetch(`/multilineChart/?year=${year}`)
+        .then(response => response.json())
+        .then(data => {
+          const monthOrder = ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"];
+          const monthLabels = {
+            "01": "Jan", "02": "Feb", "03": "Mar", "04": "Apr", "05": "May", "06": "Jun",
+            "07": "Jul", "08": "Aug", "09": "Sep", "10": "Oct", "11": "Nov", "12": "Dec"
+          };
 
-  loadYears();
-</script>
+          const labels = monthOrder.map(m => monthLabels[m]);
+
+          const colors = ["#1fd43f", "#59405d", "#e26a2c", "#007bff", "#ff00aa"];
+          const datasets = [];
+
+          Object.entries(data).forEach(([country, values], index) => {
+            const counts = monthOrder.map(month => values[month] || 0);
+
+            datasets.push({
+              label: country,
+              data: counts,
+              borderColor: colors[index % colors.length],
+              pointBorderColor: "#FFF",
+              pointBackgroundColor: colors[index % colors.length],
+              fill: true,
+              backgroundColor: "transparent",
+              borderWidth: 2
+            });
+          });
+
+          if (multilineChartInstance) {
+              multilineChartInstance.destroy();
+          }
+
+          const ctx = document.getElementById("multipleLineChart").getContext("2d");
+          multilineChartInstance = new Chart(ctx, {
+            type: "line",
+            data: {
+              labels,
+              datasets
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: { position: "bottom" },
+                title: {
+                  display: true,
+                  text: "Top 3 Countries with Fire Incidents this Year"
+                },
+                tooltip: {
+                  mode: "index",
+                  intersect: false
+                }
+              },
+              scales: {
+                x: {
+                  stacked: false
+                },
+                y: {
+                  stacked: false
+                }
+              }
+            }
+          });
+        })
+        .catch(error => console.error("Chart load error:", error));
+        
+      fetch(`/multiBarChart/?year=${year}`)
+        .then((response) => response.json())
+        .then((result) => {
+            var dataForYear = result[year] || {};
+            var severitylevel = Object.keys(dataForYear);
+            // Extract incident counts for each severity level
+            var incidentCount_major = [];
+            var incidentCount_minor = [];
+            var incidentCount_moderate = [];
+
+            var months = Object.keys(result);
+            var counts = Object.values(result);
+
+            // Sort function to sort object keys by month
+            function sortObjectKeys(obj) {
+            return Object.keys(obj).sort((a, b) => parseInt(a) - parseInt(b));
+            }
+
+            // Check if data for each severity level exists and extract incident counts
+            if (severitylevel.length >= 1) {
+              const sl1_data = dataForYear[severitylevel[0]];
+              const sortedKeys1 = sortObjectKeys(sl1_data);
+              incidentCount_major = sortedKeys1.map(key => sl1_data[key]);
+            }
+
+            if (severitylevel.length >= 2) {
+              const sl2_data = dataForYear[severitylevel[1]];
+              const sortedKeys2 = sortObjectKeys(sl2_data);
+              incidentCount_minor = sortedKeys2.map(key => sl2_data[key]);
+            }
+
+            if (severitylevel.length >= 3) {
+              const sl3_data = dataForYear[severitylevel[2]];
+              const sortedKeys3 = sortObjectKeys(sl3_data);
+              incidentCount_moderate = sortedKeys3.map(key => sl3_data[key]);
+            }
+
+            if (multibarChartInstance) {
+              multibarChartInstance.destroy();
+            }
+
+            const ctxBar = document.getElementById("multipleBarChart").getContext("2d");
+            multibarChartInstance = new Chart(ctxBar, {
+            type: "bar",
+            data: {
+                labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+                datasets: [
+                {
+                    label: "Minor Fire",
+                    backgroundColor: "#595d5d",
+                    borderColor: "#595d5d",
+                    data: incidentCount_minor,
+                },
+                {
+                    label: "Moderate Fire",
+                    backgroundColor: "#f4a84b",
+                    borderColor: "#f4a84b",
+                    data: incidentCount_moderate,
+                },
+                {
+                    label: "Major Fire",
+                    backgroundColor: "#1174d7",
+                    borderColor: "#1174d7",
+                    data: incidentCount_major,
+                },
+                ],
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              legend: {
+                position: "bottom"
+              },
+              title: {
+                display: true,
+                text: "Fire Incidents by Severity Level"
+              },
+              tooltips: {
+                mode: "index",
+                intersect: false
+              },
+              scales: {
+                x: {
+                  stacked: true,
+                },
+                y: {
+                  stacked: true,
+                },
+              },
+            },
+            });
+        })
+        .catch((error) => console.error("Error:", error));
+    }
+
+    selectYear.addEventListener("change", () => {
+      const selectedYear = selectYear.value;
+      updateCharts(selectedYear);
+    });
+
+    loadYears();
+  </script>
 {% endblock vendor_js %}
 
 {% block content %}
 <div class="container-fluid">
+  <!-- Sales? -->
   <div class="row gy-4 mb-4">
     <div class="col-md-12 col-lg-4">
-      <div class="card">
+      <div class="card h-100">
         <div class="card-body text-nowrap">
           <h5 class="card-title mb-0 flex-wrap text-nowrap">Congratulations Norris! 🎉</h5>
           <p class="mb-2">Best seller of the month</p>
@@ -222,10 +238,30 @@
         <img src="{% static 'img/illustrations/trophy.png' %}" class="position-absolute bottom-0 end-0 me-5 mb-5" width="83" alt="view sales">
       </div>
     </div>
+    <div class="col-md-12 col-lg-4">
+      <div class="card h-100">
+        <div class="card-body text-nowrap">
+          <h5 class="card-title mb-0 flex-wrap text-nowrap">New Customers</h5>
+          <p class="mb-2">Total: 1,234</p>
+          <h4 class="text-success mb-0">+15% from last month</h4>
+          <p class="mb-2">Keep up the good work! 💪</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-12 col-lg-4">
+      <div class="card h-100">
+        <div class="card-body text-nowrap">
+          <h5 class="card-title mb-0 flex-wrap text-nowrap">Monthly Revenue</h5>
+          <p class="mb-2">Total: $150,000</p>
+          <h4 class="text-warning mb-0">+20% from last month</h4>
+          <p class="mb-2">Great job team! 🎉</p>
+        </div>
+      </div>
+    </div>
   </div>
-  <div class="row gy-6">
 
-    <!-- Weekly Overview Chart -->
+  <div class="row gy-6">
+    <!-- Overview Chart -->
     <div class="col-md-6">
       <div class="card">
         <div class="card-header">
@@ -239,23 +275,60 @@
       </div>
     </div>
     <div class="col-md-6">
-              <div class="card">
-                  <div class="card-header">
-                      <div class="card-title">Total Incidents for each Month</div>
-                  </div>
-                  <div class="card-body">
-                      <div class="chart-container">
-                          <canvas id="multipleBarChart"></canvas>
-                      </div>
-                  </div>
-              </div>
+      <div class="card">
+          <div class="card-header">
+              <div class="card-title">Total Incidents for each Month</div>
+          </div>
+          <div class="card-body">
+            <div class="chart-container">
+                <canvas id="multipleBarChart"></canvas>
+            </div>
+          </div>
         </div>
+      </div>
     </div>
-  <div class="d-flex justify-content-end mb-4 mt-2">
-    <div class="d-flex align-items-center gap-2" style="min-width: 160px;">
-      <label for="selectYear" class="form-label mb-0">Year:</label>
-      <select id="selectYear" class="form-select form-select-sm"></select>
+
+  <div class="col-lg-3 col-sm-6 col-12">
+    <small class="text-light fw-medium">Year: </small>
+    <div class="demo-inline-spacing">
+      <div class="btn-group" id="dropdown-icon-demo">
+        <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" id="dropdownYearBtn">
+          <i class="ri-menu-line me-1"></i> Select Year
+        </button>
+        <ul class="dropdown-menu" id="selectYearDropdown">
+          <!-- Year items will be inserted here -->
+        </ul>
+      </div>
     </div>
   </div>
+
+  <div class="card">
+    <h5 class="card-header">Recent Fire Incidents</h5>
+    <div class="table-responsive text-nowrap">
+      <table class="table">
+        <thead class="table-dark">
+          <tr>
+            <th>Date</th>
+            <th>Location</th>
+            <th>Severity</th>
+            <th>Description</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody class="table-border-bottom-0" id="incidentTableBody"></tbody>
+      </table>
+    </div>
+    <div class="d-flex justify-content-end p-3">
+      <nav>
+        <ul class="pagination pagination-sm mb-0">
+          <li class="page-item" id="prevPage"><button type="button" class="btn btn-sm btn-secondary">Previous</button></li>
+          <li class="page-item disabled"><span class="page-link" id="currentPage">1</span></li>
+          <li class="page-item" id="nextPage"><button type="button" class="btn btn-sm btn-secondary">Next</button></li>
+        </ul>
+      </nav>
+    </div>
+  </div>
+
 </div>
+
 {% endblock content %}
