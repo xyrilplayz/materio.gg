@@ -12,7 +12,6 @@ Here you can override the page view layout.
 Refer to dashboards/urls.py file for more pages.
 """
 
-
 class DashboardsView(TemplateView):
     # Predefined function
     def get_context_data(self, **kwargs):
@@ -20,8 +19,18 @@ class DashboardsView(TemplateView):
         context = TemplateLayout.init(self, super().get_context_data(**kwargs))
 
         return context
+    
 def MultilineIncidentTop3Country(request):
     query = '''
+    WITH top_countries AS (
+        SELECT fl.country
+        FROM fire_incident fi
+        JOIN fire_locations fl ON fi.location_id = fl.id
+        WHERE strftime('%Y', fi.date_time) = strftime('%Y', 'now')
+        GROUP BY fl.country
+        ORDER BY COUNT(fi.id) DESC
+        LIMIT 3
+    )
     SELECT 
         fl.country, 
         strftime('%m', fi.date_time) AS month, 
@@ -31,21 +40,7 @@ def MultilineIncidentTop3Country(request):
     JOIN 
         fire_locations fl ON fi.location_id = fl.id
     WHERE 
-    fl.country IN (
-        SELECT 
-            fl_top.country
-        FROM 
-            fire_incident fi_top
-        JOIN 
-            fire_locations fl_top ON fi_top.location_id = fl_top.id
-        WHERE 
-            strftime('%Y', fi_top.date_time) = strftime('%Y', 'now')
-        GROUP BY 
-            fl_top.country
-        ORDER BY 
-            COUNT(fi_top.id) DESC
-        LIMIT 3
-    ) 
+        fl.country IN (SELECT country FROM top_countries)
         AND strftime('%Y', fi.date_time) = strftime('%Y', 'now')
     GROUP BY 
         fl.country, month
@@ -56,37 +51,24 @@ def MultilineIncidentTop3Country(request):
         cursor.execute(query)
         rows = cursor.fetchall()
 
-    # Initialize a dictionary to store the result
+    months = [str(i).zfill(2) for i in range(1, 13)]
     result = {}
 
-    # Initialize a set of months from January to December
-    months = set(str(i).zfill(2) for i in range(1, 13))
-
-    # Loop through the query results
-    for row in rows:
-        country = row[0]
-        month = row[1]
-        total_incidents = row[2]
-
-        # If the country is not in the result dictionary, initialize it with all months set to zero
+    for country, month, count in rows:
         if country not in result:
-            result[country] = {month: 0 for month in months}
+            result[country] = {m: 0 for m in months}
+        result[country][month] = count
 
-        # Update the incident count for the corresponding month
-        result[country][month] = total_incidents
+    if len(result) < 3:
+        placeholders_needed = 3 - len(result)
+        for i in range(placeholders_needed):
+            placeholder_rank = len(result) + 1
+            result[f"No Top {placeholder_rank}"] = {m: 0 for m in months}
 
-    # Ensure there are always 3 countries in the result
-    while len(result) < 3:
-        # Placeholder name for missing countries
-        missing_country = f"Country {len(result) + 1}"
-        result[missing_country] = {month: 0 for month in months}
-
-    # Sort months for each country
     for country in result:
         result[country] = dict(sorted(result[country].items()))
 
     return JsonResponse(result)
-
 
 def multipleBarbySeverity(request):
     query = '''

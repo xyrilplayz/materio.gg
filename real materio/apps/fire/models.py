@@ -1,8 +1,3 @@
-
-# Create your models here.
-
-# Create your models here.
-
 from django.db import models
 
 class BaseModel(models.Model):
@@ -11,7 +6,6 @@ class BaseModel(models.Model):
 
     class Meta:
         abstract = True
-
 
 class Locations(BaseModel):
     name = models.CharField(max_length=150)
@@ -25,7 +19,6 @@ class Locations(BaseModel):
 
     def __str__(self):
         return f"{self.name} - {self.city}, {self.country}"
-
 
 class Incident(BaseModel):
     SEVERITY_CHOICES = (
@@ -41,7 +34,6 @@ class Incident(BaseModel):
     def __str__(self):
         return f"{self.severity_level}"
 
-
 class FireStation(BaseModel):
     name = models.CharField(max_length=150)
     latitude = models.DecimalField(
@@ -54,7 +46,6 @@ class FireStation(BaseModel):
 
     def __str__(self):
         return f"{self.name} - {self.city}, {self.country}"
-
 
 class Firefighters(BaseModel):
     XP_CHOICES = (
@@ -70,13 +61,11 @@ class Firefighters(BaseModel):
     experience_level = models.CharField(max_length=45, null=True, blank=True, choices=XP_CHOICES)
     station = models.ForeignKey(FireStation, on_delete=models.CASCADE)
 
-
 class FireTruck(BaseModel):
     truck_number = models.CharField(max_length=150)
     model = models.CharField(max_length=150)
     capacity = models.CharField(max_length=150)  # water
     station = models.ForeignKey(FireStation, on_delete=models.CASCADE)
-
 
 class WeatherConditions(BaseModel):
     incident = models.ForeignKey(Incident, on_delete=models.CASCADE)
